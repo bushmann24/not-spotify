@@ -31,14 +31,9 @@
     <style>
         ::-webkit-scrollbar { width: 0px; background: transparent; }
         .truncate-2-lines { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        
-        /* The Dynamic Viewport Fix for Mobile Browsers */
         body { height: 100dvh; } 
-        
-        /* Hardware Safe Area Padding */
         .safe-bottom { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
         
-        /* Smooth Scrubber */
         input[type=range] { -webkit-appearance: none; background: #4d4d4d; border-radius: 5px; height: 4px; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; cursor: pointer; transition: transform 0.1s; }
         input[type=range]::-webkit-slider-thumb:active { transform: scale(1.3); }
@@ -71,8 +66,7 @@
             <div class="px-4 grid grid-cols-2 gap-4" id="libraryGrid"></div>
         </div>
 
-
-        <div id="albumView" class="hidden flex-1 overflow-y-auto pb-48 w-full transition-all duration-300" style="background: linear-gradient(to bottom, #121212 0%, #121212 40%);">
+        <div id="albumView" class="hidden flex-1 overflow-y-auto pb-48 w-full transition-all duration-300">
             
             <div class="flex justify-between items-center px-4 py-4 sticky top-0 z-10">
                 <button onclick="showLibrary()" class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
@@ -221,14 +215,59 @@
         let playingAlbumId = null;  
         let playingTrackId = null;  
         let isPlaying = false;
-        let isDraggingScrubber = false; // Fixes the bouncing scrubber bug
+        let isDraggingScrubber = false; 
 
         const audioPlayer = document.getElementById('audioPlayer');
-        const viewLibrary = document.getElementById('libraryView');
-        const viewAlbum = document.getElementById('albumView');
-        const viewFullPlayer = document.getElementById('fullPlayerView');
         const scrubber = document.getElementById('scrubber');
         
+        // --- THE ROUTING ENGINE ---
+        // This function detects URL # changes and updates the app layout natively
+        function handleRouting() {
+            const hash = window.location.hash.substring(1); // Grabs 'nostalgia' from '#nostalgia'
+            
+            // 1. Is the Full Player Open?
+            if (hash === 'player') {
+                document.getElementById('fullPlayerView').classList.add('active');
+                return; // Stop here, keep the album background exactly as it was
+            } else {
+                document.getElementById('fullPlayerView').classList.remove('active');
+            }
+
+            // 2. Are we Home or in an Album?
+            if (hash === '') {
+                document.getElementById('albumView').classList.add('hidden');
+                document.getElementById('libraryView').classList.remove('hidden');
+                currentAlbumId = null;
+            } else if (library[hash]) {
+                currentAlbumId = hash;
+                const album = library[hash];
+                
+                document.getElementById('headerCover').src = album.cover;
+                document.getElementById('headerAlbumTitle').innerText = album.title;
+                document.getElementById('headerArtist').innerText = album.artist;
+                document.getElementById('headerMeta').innerText = album.meta;
+                document.getElementById('albumView').style.background = `linear-gradient(to bottom, ${album.themeColor} 0%, #121212 40%)`;
+
+                renderTracklist();
+                document.getElementById('libraryView').classList.add('hidden');
+                document.getElementById('albumView').classList.remove('hidden');
+            }
+        }
+
+        // Listen for phone back-swipes and manual link changes
+        window.addEventListener('hashchange', handleRouting);
+        window.addEventListener('DOMContentLoaded', handleRouting);
+
+        // --- NAVIGATION CONTROLS ---
+        // These now just update the URL, and handleRouting() does all the heavy lifting
+        function showLibrary() { window.location.hash = ''; }
+        function openAlbum(albumId) { window.location.hash = albumId; }
+        function openFullPlayer() { if (playingTrackId !== null) window.location.hash = 'player'; }
+        
+        // Triggers the phone's native back behavior to close the player
+        function closeFullPlayer() { window.history.back(); }
+
+        // --- RENDER FUNCTIONS ---
         function renderLibrary() {
             const grid = document.getElementById('libraryGrid');
             grid.innerHTML = '';
@@ -242,36 +281,6 @@
                     </div>
                 `;
             });
-        }
-
-        function showLibrary() {
-            viewAlbum.classList.add('hidden');
-            viewLibrary.classList.remove('hidden');
-        }
-
-        function openAlbum(albumId) {
-            currentAlbumId = albumId;
-            const album = library[albumId];
-            
-            document.getElementById('headerCover').src = album.cover;
-            document.getElementById('headerAlbumTitle').innerText = album.title;
-            document.getElementById('headerArtist').innerText = album.artist;
-            document.getElementById('headerMeta').innerText = album.meta;
-            
-            viewAlbum.style.background = `linear-gradient(to bottom, ${album.themeColor} 0%, #121212 40%)`;
-
-            renderTracklist();
-            viewLibrary.classList.add('hidden');
-            viewAlbum.classList.remove('hidden');
-        }
-
-        function openFullPlayer() {
-            if (playingTrackId !== null) {
-                viewFullPlayer.classList.add('active');
-            }
-        }
-        function closeFullPlayer() {
-            viewFullPlayer.classList.remove('active');
         }
 
         function renderTracklist() {
@@ -296,6 +305,7 @@
             });
         }
 
+        // --- AUDIO ENGINE ---
         function playTrack(albumId, trackId) {
             const album = library[albumId];
             const track = album.tracks.find(t => t.id === trackId);
@@ -313,7 +323,7 @@
                 document.getElementById('fullArtist').innerText = album.artist;
                 document.getElementById('fullCover').src = album.cover;
                 document.getElementById('fullPlayerAlbum').innerText = album.title;
-                viewFullPlayer.style.background = `linear-gradient(to bottom, ${album.themeColor} 0%, #121212 100%)`;
+                document.getElementById('fullPlayerView').style.background = `linear-gradient(to bottom, ${album.themeColor} 0%, #121212 100%)`;
             }
             
             audioPlayer.play().catch(e => console.log("Audio play failed: Check file names exactly!", e));
@@ -367,12 +377,9 @@
             return `${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
-        // --- THE SCRUBBER BOUNCE FIX ---
-        // Tells the app when your thumb is touching the screen
         scrubber.addEventListener('mousedown', () => isDraggingScrubber = true);
         scrubber.addEventListener('touchstart', () => isDraggingScrubber = true);
         
-        // Updates the music to match where you let go
         scrubber.addEventListener('mouseup', () => { 
             audioPlayer.currentTime = scrubber.value; 
             isDraggingScrubber = false; 
@@ -388,7 +395,6 @@
         });
 
         audioPlayer.addEventListener('timeupdate', () => {
-            // Only update the scrubber visual if you ARE NOT currently dragging it
             if(!isDraggingScrubber) {
                 scrubber.value = audioPlayer.currentTime;
                 const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
@@ -399,6 +405,7 @@
 
         audioPlayer.onended = function() { nextTrack(); };
 
+        // INITIAL BOOT
         renderLibrary();
     </script>
 </body>
