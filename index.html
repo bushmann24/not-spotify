@@ -16,7 +16,7 @@
         })();
     </script>
     
-    <title>Spotify Clone</title>
+    <title>Not Spotify</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
@@ -50,7 +50,7 @@
             <div class="px-4 py-6 sticky top-0 bg-spBlack z-10 flex justify-between items-center shadow-md">
                 <div class="flex items-center space-x-4">
                     <div class="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-sm font-bold">B</div>
-                    <h1 class="text-2xl font-bold">Your Library</h1>
+                    <h1 class="text-2xl font-bold">Spo-DEE-fy</h1>
                 </div>
                 <div class="flex space-x-4 text-xl text-spGray">
                     <i class="fas fa-search"></i>
@@ -91,7 +91,7 @@
                     <button><i class="fas fa-ellipsis-h"></i></button>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button class="text-spGray text-2xl"><i class="fas fa-random"></i></button>
+                    <button id="albumShuffleBtn" onclick="toggleShuffle(event)" class="text-spGray text-2xl transition-colors"><i class="fas fa-random"></i></button>
                     <button onclick="togglePlay()" class="w-14 h-14 bg-spGreen rounded-full flex items-center justify-center text-black text-xl hover:scale-105">
                         <i class="fas fa-play" id="mainPlayIcon"></i>
                     </button>
@@ -134,7 +134,7 @@
                 </div>
 
                 <div class="flex justify-between items-center">
-                    <button class="text-spGray text-2xl"><i class="fas fa-random"></i></button>
+                    <button id="fullShuffleBtn" onclick="toggleShuffle(event)" class="text-spGray text-2xl transition-colors"><i class="fas fa-random"></i></button>
                     <button onclick="prevTrack()" class="text-white text-4xl"><i class="fas fa-step-backward"></i></button>
                     <button onclick="togglePlay(event)" class="w-16 h-16 bg-white rounded-full flex items-center justify-center text-black text-2xl hover:scale-105 transition-transform">
                         <i class="fas fa-play" id="fullPlayIcon"></i>
@@ -203,19 +203,6 @@
                     { id: 12, title: "Soul Calibur", file: "music/nostalgia-ultra/audio-13.mp3" },
                     { id: 13, title: "Nature Feels", file: "music/nostalgia-ultra/audio-14.mp3" }
                 ]
-            },
-            "art-of-loving": {
-                id: "art-of-loving",
-                title: "The Art of Loving",
-                artist: "Olivia Dean",
-                meta: "Album • 2025 • 12 songs, 34 min 23 sec",
-                cover: "music/the-art-of-loving/album.webp",
-                themeColor: "#4a5568", 
-                tracks: [
-                    { id: 0, title: "The Art of Loving (Intro)", file: "music/the-art-of-loving/the-art-of-loving-(intro).mp3" },
-                    { id: 1, title: "Lady Lady", file: "music/the-art-of-loving/lady-lady.mp3" },
-                    { id: 2, title: "Nice To Each Other", file: "music/the-art-of-loving/nice-to-each-other.mp3" }
-                ]
             }
         };
 
@@ -227,6 +214,7 @@
         let playingTrackId = null;  
         let isPlaying = false;
         let isDraggingScrubber = false; 
+        let isShuffle = false; // New Shuffle State
 
         const audioPlayer = document.getElementById('audioPlayer');
         const scrubber = document.getElementById('scrubber');
@@ -315,6 +303,11 @@
                 playingTrackId = trackId;
                 audioPlayer.src = track.file;
                 
+                // INSTANT UI RESET FIX: Stops the green scrubber flash!
+                scrubber.value = 0;
+                scrubber.style.background = `linear-gradient(to right, #1ed760 0%, #4d4d4d 0%)`;
+                document.getElementById('timeCurrent').innerText = "0:00";
+                
                 document.getElementById('npTitle').innerText = track.title;
                 document.getElementById('npArtist').innerText = album.artist;
                 document.getElementById('npCover').src = album.cover;
@@ -343,11 +336,38 @@
             updatePlayIcons();
         }
 
+        // --- SHUFFLE LOGIC ---
+        function toggleShuffle(event) {
+            if (event) event.stopPropagation();
+            isShuffle = !isShuffle;
+            
+            const btnAlbum = document.getElementById('albumShuffleBtn');
+            const btnFull = document.getElementById('fullShuffleBtn');
+            
+            if (isShuffle) {
+                btnAlbum.classList.remove('text-spGray'); btnAlbum.classList.add('text-spGreen');
+                btnFull.classList.remove('text-spGray'); btnFull.classList.add('text-spGreen');
+            } else {
+                btnAlbum.classList.add('text-spGray'); btnAlbum.classList.remove('text-spGreen');
+                btnFull.classList.add('text-spGray'); btnFull.classList.remove('text-spGreen');
+            }
+        }
+
         function nextTrack() {
             if(!playingAlbumId) return;
             const album = library[playingAlbumId];
-            let nextId = playingTrackId + 1;
-            if(nextId >= album.tracks.length) nextId = 0; 
+            let nextId;
+            
+            // Randomly pick the next track if Shuffle is ON
+            if (isShuffle && album.tracks.length > 1) {
+                do {
+                    nextId = Math.floor(Math.random() * album.tracks.length);
+                } while (nextId === playingTrackId); // Ensures it doesn't play the exact same song twice
+            } else {
+                nextId = playingTrackId + 1;
+                if(nextId >= album.tracks.length) nextId = 0; 
+            }
+            
             playTrack(playingAlbumId, nextId);
         }
 
