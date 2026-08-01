@@ -180,17 +180,28 @@
         // YOUR DATABASE
         // ==========================================
         const library = {
-            "nostalgia": {
-                id: "nostalgia",
-                title: "nostalgia, ULTRA.",
+            "nostalgia-ultra": {
+                id: "nostalgia-ultra",
+                title: "Nostalgia, ULTRA",
                 artist: "Frank Ocean",
-                meta: "Mixtape • 2011 • Offline",
+                meta: "Mixtape • 2011 • 14 songs, 42 min 7 sec",
                 cover: "music/nostalgia-ultra/album.webp",
                 themeColor: "#d9772b", 
                 tracks: [
-                    { id: 0, title: "Strawberry Swing", file: "music/nostalgia-ultra/audio-01.mp3" },
-                    { id: 1, title: "Novacane", file: "music/nostalgia-ultra/audio-02.mp3" },
-                    { id: 2, title: "We All Try", file: "music/nostalgia-ultra/audio-03.mp3" }
+                    { id: 0, title: "Street Fighter", file: "music/nostalgia-ultra/audio-01.mp3" },
+                    { id: 1, title: "Strawberry Swing", file: "music/nostalgia-ultra/audio-02.mp3" },
+                    { id: 2, title: "Novacane", file: "music/nostalgia-ultra/audio-03.mp3" },
+                    { id: 3, title: "We All Try", file: "music/nostalgia-ultra/audio-04.mp3" },
+                    { id: 4, title: "Bitches Talkin'", file: "music/nostalgia-ultra/audio-05.mp3" },
+                    { id: 5, title: "Songs For Women", file: "music/nostalgia-ultra/audio-06.mp3" },
+                    { id: 6, title: "LoveCrimes", file: "music/nostalgia-ultra/audio-07.mp3" },
+                    { id: 7, title: "Goldeneye", file: "music/nostalgia-ultra/audio-08.mp3" },
+                    { id: 8, title: "There Will Be Tears", file: "music/nostalgia-ultra/audio-09.mp3" },
+                    { id: 9, title: "Swim Good", file: "music/nostalgia-ultra/audio-10.mp3" },
+                    { id: 10, title: "Dust", file: "music/nostalgia-ultra/audio-11.mp3" },
+                    { id: 11, title: "American Wedding", file: "music/nostalgia-ultra/audio-12.mp3" },
+                    { id: 12, title: "Soul Calibur", file: "music/nostalgia-ultra/audio-13.mp3" },
+                    { id: 13, title: "Nature Feels", file: "music/nostalgia-ultra/audio-14.mp3" }
                 ]
             },
             "art-of-loving": {
@@ -220,20 +231,16 @@
         const audioPlayer = document.getElementById('audioPlayer');
         const scrubber = document.getElementById('scrubber');
         
-        // --- THE ROUTING ENGINE ---
-        // This function detects URL # changes and updates the app layout natively
         function handleRouting() {
-            const hash = window.location.hash.substring(1); // Grabs 'nostalgia' from '#nostalgia'
+            const hash = window.location.hash.substring(1);
             
-            // 1. Is the Full Player Open?
             if (hash === 'player') {
                 document.getElementById('fullPlayerView').classList.add('active');
-                return; // Stop here, keep the album background exactly as it was
+                return; 
             } else {
                 document.getElementById('fullPlayerView').classList.remove('active');
             }
 
-            // 2. Are we Home or in an Album?
             if (hash === '') {
                 document.getElementById('albumView').classList.add('hidden');
                 document.getElementById('libraryView').classList.remove('hidden');
@@ -254,20 +261,14 @@
             }
         }
 
-        // Listen for phone back-swipes and manual link changes
         window.addEventListener('hashchange', handleRouting);
         window.addEventListener('DOMContentLoaded', handleRouting);
 
-        // --- NAVIGATION CONTROLS ---
-        // These now just update the URL, and handleRouting() does all the heavy lifting
         function showLibrary() { window.location.hash = ''; }
         function openAlbum(albumId) { window.location.hash = albumId; }
         function openFullPlayer() { if (playingTrackId !== null) window.location.hash = 'player'; }
-        
-        // Triggers the phone's native back behavior to close the player
         function closeFullPlayer() { window.history.back(); }
 
-        // --- RENDER FUNCTIONS ---
         function renderLibrary() {
             const grid = document.getElementById('libraryGrid');
             grid.innerHTML = '';
@@ -276,7 +277,7 @@
                 grid.innerHTML += `
                     <div class="flex flex-col cursor-pointer active:scale-95 transition-transform" onclick="openAlbum('${album.id}')">
                         <img src="${album.cover}" class="w-full aspect-square object-cover mb-2 shadow-lg rounded-md" onerror="this.src='https://placehold.co/400x400/282828/FFF?text=Art'">
-                        <span class="text-sm font-bold truncate-2-lines text-white">${album.title}</span>
+                        <span class="text-sm font-bold truncate-2-lines text-white mt-1">${album.title}</span>
                         <span class="text-xs text-spGray truncate">${album.artist}</span>
                     </div>
                 `;
@@ -305,7 +306,6 @@
             });
         }
 
-        // --- AUDIO ENGINE ---
         function playTrack(albumId, trackId) {
             const album = library[albumId];
             const track = album.tracks.find(t => t.id === trackId);
@@ -378,7 +378,7 @@
         }
 
         scrubber.addEventListener('mousedown', () => isDraggingScrubber = true);
-        scrubber.addEventListener('touchstart', () => isDraggingScrubber = true);
+        scrubber.addEventListener('touchstart', () => isDraggingScrubber = true, {passive: true});
         
         scrubber.addEventListener('mouseup', () => { 
             audioPlayer.currentTime = scrubber.value; 
