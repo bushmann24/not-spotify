@@ -214,7 +214,11 @@
         let playingTrackId = null;  
         let isPlaying = false;
         let isDraggingScrubber = false; 
-        let isShuffle = false; // New Shuffle State
+
+        // TRUE SHUFFLE ENGINE VARIABLES
+        let isShuffle = false; 
+        let shuffleQueue = [];
+        let shuffleIndex = 0;
 
         const audioPlayer = document.getElementById('audioPlayer');
         const scrubber = document.getElementById('scrubber');
@@ -294,16 +298,65 @@
             });
         }
 
+        // --- TRUE SHUFFLE (FISHER-YATES ALGORITHM) ---
+        function buildShuffleQueue(startTrackId) {
+            if (!playingAlbumId) return;
+            const album = library[playingAlbumId];
+
+            // 1. Get all tracks EXCEPT the one we are starting with
+            let remainingTracks = album.tracks.map(t => t.id).filter(id => id !== startTrackId);
+
+            // 2. Shuffle those remaining tracks like a deck of cards
+            for (let i = remainingTracks.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [remainingTracks[i], remainingTracks[j]] = [remainingTracks[j], remainingTracks[i]];
+            }
+
+            // 3. Rebuild the queue: The requested song plays first, then the randomized rest follow
+            shuffleQueue = [startTrackId, ...remainingTracks];
+            shuffleIndex = 0;
+        }
+
+        function toggleShuffle(event) {
+            if (event) event.stopPropagation();
+            isShuffle = !isShuffle;
+            
+            const btnAlbum = document.getElementById('albumShuffleBtn');
+            const btnFull = document.getElementById('fullShuffleBtn');
+            
+            if (isShuffle) {
+                btnAlbum.classList.remove('text-spGray'); btnAlbum.classList.add('text-spGreen');
+                btnFull.classList.remove('text-spGray'); btnFull.classList.add('text-spGreen');
+                
+                // Build the new randomized deck right now
+                if (playingAlbumId && playingTrackId !== null) {
+                    buildShuffleQueue(playingTrackId);
+                }
+            } else {
+                btnAlbum.classList.add('text-spGray'); btnAlbum.classList.remove('text-spGreen');
+                btnFull.classList.add('text-spGray'); btnFull.classList.remove('text-spGreen');
+                shuffleQueue = [];
+                shuffleIndex = 0;
+            }
+        }
+
         function playTrack(albumId, trackId) {
             const album = library[albumId];
             const track = album.tracks.find(t => t.id === trackId);
+
+            // SHUFFLE FIX: If you manually click a song while shuffle is on, it rebuilds the deck!
+            if (isShuffle) {
+                if (playingAlbumId !== albumId || shuffleQueue[shuffleIndex] !== trackId) {
+                    playingAlbumId = albumId; // Must set this before building queue
+                    buildShuffleQueue(trackId);
+                }
+            }
 
             if (playingAlbumId !== albumId || playingTrackId !== trackId) {
                 playingAlbumId = albumId;
                 playingTrackId = trackId;
                 audioPlayer.src = track.file;
                 
-                // INSTANT UI RESET FIX: Stops the green scrubber flash!
                 scrubber.value = 0;
                 scrubber.style.background = `linear-gradient(to right, #1ed760 0%, #4d4d4d 0%)`;
                 document.getElementById('timeCurrent').innerText = "0:00";
@@ -336,51 +389,52 @@
             updatePlayIcons();
         }
 
-        // --- SHUFFLE LOGIC ---
-        function toggleShuffle(event) {
-            if (event) event.stopPropagation();
-            isShuffle = !isShuffle;
-            
-            const btnAlbum = document.getElementById('albumShuffleBtn');
-            const btnFull = document.getElementById('fullShuffleBtn');
-            
-            if (isShuffle) {
-                btnAlbum.classList.remove('text-spGray'); btnAlbum.classList.add('text-spGreen');
-                btnFull.classList.remove('text-spGray'); btnFull.classList.add('text-spGreen');
-            } else {
-                btnAlbum.classList.add('text-spGray'); btnAlbum.classList.remove('text-spGreen');
-                btnFull.classList.add('text-spGray'); btnFull.classList.remove('text-spGreen');
-            }
-        }
-
         function nextTrack() {
             if(!playingAlbumId) return;
             const album = library[playingAlbumId];
-            let nextId;
-            
-            // Randomly pick the next track if Shuffle is ON
-            if (isShuffle && album.tracks.length > 1) {
-                do {
-                    nextId = Math.floor(Math.random() * album.tracks.length);
-                } while (nextId === playingTrackId); // Ensures it doesn't play the exact same song twice
+
+            if (isShuffle) {
+                shuffleIndex++;
+                if (shuffleIndex < shuffleQueue.length) {
+                    // Draw the next card in the deck
+                    playTrack(playingAlbumId, shuffleQueue[shuffleIndex]);
+                } else {
+                    // Deck is empty, album stops playing
+                    isPlaying = false;
+                    audioPlayer.pause();
+                    updatePlayIcons();
+                    shuffleIndex = 0; 
+                }
             } else {
-                nextId = playingTrackId + 1;
-                if(nextId >= album.tracks.length) nextId = 0; 
+                let nextId = playingTrackId + 1;
+                if(nextId < album.tracks.length) {
+                    playTrack(playingAlbumId, nextId);
+                } else {
+                    // Normal order is finished, album stops playing
+                    isPlaying = false;
+                    audioPlayer.pause();
+                    updatePlayIcons();
+                }
             }
-            
-            playTrack(playingAlbumId, nextId);
         }
 
         function prevTrack() {
             if(!playingAlbumId) return;
+            // If we are deep into the song, just restart it natively
             if(audioPlayer.currentTime > 3) {
                 audioPlayer.currentTime = 0;
                 return;
             }
-            const album = library[playingAlbumId];
-            let prevId = playingTrackId - 1;
-            if(prevId < 0) prevId = album.tracks.length - 1; 
-            playTrack(playingAlbumId, prevId);
+
+            if (isShuffle) {
+                shuffleIndex--;
+                if (shuffleIndex < 0) shuffleIndex = 0;
+                playTrack(playingAlbumId, shuffleQueue[shuffleIndex]);
+            } else {
+                let prevId = playingTrackId - 1;
+                if(prevId < 0) prevId = 0;
+                playTrack(playingAlbumId, prevId);
+            }
         }
 
         function updatePlayIcons() {
@@ -423,6 +477,7 @@
             document.getElementById('timeCurrent').innerText = formatTime(audioPlayer.currentTime);
         });
 
+        // Automatically fire the next song when one ends
         audioPlayer.onended = function() { nextTrack(); };
 
         // INITIAL BOOT
