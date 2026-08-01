@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+    
     <title>Spotify Clone</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -10,88 +12,97 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        spBlack: '#121212',
-                        spGreen: '#1ed760',
-                        spGray: '#b3b3b3',
-                        spDark: '#282828'
-                    }
+                    colors: { spBlack: '#121212', spGreen: '#1ed760', spGray: '#b3b3b3', spDark: '#282828' }
                 }
             }
         }
     </script>
     <style>
-        /* Creates the fade-in color gradient at the top of the album */
-        .album-gradient {
-            background: linear-gradient(to bottom, #6b2e2e 0%, #121212 40%);
-        }
-        /* Custom scrollbar to mimic native app */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .truncate-2-lines { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
 <body class="bg-black text-white font-sans h-screen w-full flex justify-center overflow-hidden">
 
-    <div class="w-full max-w-md h-full bg-spBlack relative flex flex-col album-gradient">
+    <div class="w-full max-w-md h-full bg-spBlack relative flex flex-col">
         
-        <div class="flex justify-between items-center px-4 py-4 sticky top-0 z-10">
-            <button class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
-            <span class="text-sm font-bold opacity-0 transition-opacity" id="headerTitle">Victory Garden</span>
-            <button class="text-white text-xl"><i class="fas fa-ellipsis-v"></i></button>
+        <div id="libraryView" class="flex-1 overflow-y-auto pb-32 w-full">
+            <div class="px-4 py-6 sticky top-0 bg-spBlack z-10 flex justify-between items-center shadow-md">
+                <div class="flex items-center space-x-4">
+                    <div class="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-sm font-bold">B</div>
+                    <h1 class="text-2xl font-bold">Your Library</h1>
+                </div>
+                <div class="flex space-x-4 text-xl text-spGray">
+                    <i class="fas fa-search"></i>
+                    <i class="fas fa-plus"></i>
+                </div>
+            </div>
+            
+            <div class="px-4 flex space-x-2 mb-4">
+                <span class="bg-spDark px-4 py-1.5 rounded-full text-sm">Playlists</span>
+                <span class="bg-spDark px-4 py-1.5 rounded-full text-sm">Albums</span>
+                <span class="bg-spDark px-4 py-1.5 rounded-full text-sm">Artists</span>
+            </div>
+
+            <div class="px-4 grid grid-cols-2 gap-4" id="libraryGrid"></div>
         </div>
 
-        <div class="flex-1 overflow-y-auto pb-24 px-4" id="scrollArea">
+
+        <div id="albumView" class="hidden flex-1 overflow-y-auto pb-32 w-full transition-all duration-300" style="background: linear-gradient(to bottom, #121212 0%, #121212 40%);">
             
-            <div class="flex flex-col items-center mt-4 mb-6">
-                <img src="images/cover.jpg" alt="Album Cover" class="w-60 h-60 shadow-2xl mb-4 rounded-sm object-cover" onerror="this.src='https://placehold.co/400x400/282828/FFF?text=Album+Art'">
+            <div class="flex justify-between items-center px-4 py-4 sticky top-0 z-10">
+                <button onclick="showLibrary()" class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
+                <button class="text-white text-xl"><i class="fas fa-ellipsis-v"></i></button>
+            </div>
+
+            <div class="flex flex-col items-center mt-2 mb-6 px-4">
+                <img id="headerCover" src="" class="w-60 h-60 shadow-2xl mb-4 rounded-sm object-cover">
                 <div class="w-full text-left">
-                    <h1 class="text-2xl font-bold mb-1">Victory Garden</h1>
+                    <h1 id="headerAlbumTitle" class="text-2xl font-bold mb-1">Album</h1>
                     <div class="flex items-center text-sm mb-1">
-                        <img src="images/artist.jpg" alt="Artist" class="w-6 h-6 rounded-full mr-2 object-cover" onerror="this.src='https://placehold.co/100x100/282828/FFF?text=Artist'">
-                        <span class="font-bold">Young the Giant</span>
+                        <span id="headerArtist" class="font-bold">Artist</span>
                     </div>
-                    <p class="text-spGray text-xs">Album • 2024 • Latest release</p>
+                    <p class="text-spGray text-xs">Album • Offline</p>
                 </div>
             </div>
 
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex justify-between items-center mb-6 px-4">
                 <div class="flex space-x-4 text-spGray text-xl">
-                    <button><i class="far fa-heart"></i></button>
-                    <button><i class="fas fa-arrow-circle-down"></i></button>
+                    <button class="text-spGreen"><i class="fas fa-heart"></i></button>
+                    <button class="text-spGreen"><i class="fas fa-arrow-circle-down"></i></button>
                     <button><i class="fas fa-ellipsis-h"></i></button>
                 </div>
                 <div class="flex items-center space-x-4">
                     <button class="text-spGray text-2xl"><i class="fas fa-random"></i></button>
-                    <button onclick="togglePlay()" class="w-14 h-14 bg-spGreen rounded-full flex items-center justify-center text-black text-xl hover:scale-105 transition-transform">
+                    <button onclick="togglePlay()" class="w-14 h-14 bg-spGreen rounded-full flex items-center justify-center text-black text-xl hover:scale-105">
                         <i class="fas fa-play" id="mainPlayIcon"></i>
                     </button>
                 </div>
             </div>
 
-            <div class="flex flex-col" id="tracklist">
-                </div>
+            <div class="flex flex-col px-4" id="tracklist"></div>
         </div>
 
-        <div class="absolute bottom-0 w-full px-2 pb-2 z-20">
-            <div class="bg-spDark rounded-md flex items-center p-2 shadow-lg cursor-pointer hover:bg-gray-700 transition-colors">
-                <img src="images/cover.jpg" alt="Now Playing" class="w-10 h-10 rounded-sm mr-3 object-cover" id="npCover" onerror="this.src='https://placehold.co/100x100/121212/FFF?text=Art'">
+        <div class="absolute bottom-0 w-full px-2 pb-2 z-50">
+            <div class="bg-spDark rounded-md flex items-center p-2 shadow-lg mb-2">
+                <img id="npCover" src="https://placehold.co/100x100/121212/FFF?text=Art" class="w-10 h-10 rounded-sm mr-3 object-cover">
                 <div class="flex-1 overflow-hidden">
-                    <div class="text-sm font-bold truncate" id="npTitle">Select a track</div>
-                    <div class="text-xs text-spGray truncate" id="npArtist">Young the Giant</div>
+                    <div id="npTitle" class="text-sm font-bold truncate text-white">Not Playing</div>
+                    <div id="npArtist" class="text-xs text-spGray truncate">Select a track</div>
                 </div>
                 <div class="flex items-center space-x-4 px-2 text-xl">
                     <button class="text-spGreen"><i class="fas fa-laptop-house text-sm"></i></button>
-                    <button class="text-spGreen"><i class="far fa-check-circle"></i></button>
                     <button onclick="togglePlay(event)" class="text-white w-8 h-8 flex items-center justify-center">
                         <i class="fas fa-play" id="npPlayIcon"></i>
                     </button>
                 </div>
             </div>
             
-            <div class="flex justify-between items-center pt-3 px-6 pb-2 bg-spBlack text-spGray text-xs">
-                <div class="flex flex-col items-center text-white"><i class="fas fa-home text-xl mb-1"></i>Home</div>
-                <div class="flex flex-col items-center"><i class="fas fa-search text-xl mb-1"></i>Search</div>
-                <div class="flex flex-col items-center"><i class="fas fa-book-open text-xl mb-1"></i>Your Library</div>
-                <div class="flex flex-col items-center"><i class="fab fa-spotify text-xl mb-1"></i>Premium</div>
+            <div class="flex justify-around items-center pt-2 px-2 pb-1 bg-spBlack text-spGray text-xs">
+                <button onclick="showLibrary()" class="flex flex-col items-center hover:text-white transition-colors"><i class="fas fa-home text-xl mb-1"></i>Home</button>
+                <button class="flex flex-col items-center hover:text-white transition-colors"><i class="fas fa-search text-xl mb-1"></i>Search</button>
+                <button onclick="showLibrary()" class="flex flex-col items-center text-white"><i class="fas fa-book-open text-xl mb-1"></i>Library</button>
+                <button class="flex flex-col items-center hover:text-white transition-colors"><i class="fab fa-spotify text-xl mb-1"></i>Premium</button>
             </div>
         </div>
 
@@ -100,36 +111,106 @@
     <audio id="audioPlayer"></audio>
 
     <script>
-        // --- YOUR TRACK DATA HERE ---
-        // Just upload your mp3 files to the "music" folder in GitHub and list them here!
-        const tracks = [
-            { id: 0, title: "Evergreen", artist: "Young the Giant", file: "music/track1.mp3" },
-            { id: 1, title: "Different Kind Of Love", artist: "Young the Giant", file: "music/track2.mp3" },
-            { id: 2, title: "Bitter Fruit", artist: "Young the Giant", file: "music/track3.mp3" },
-            { id: 3, title: "Already There", artist: "Young the Giant", file: "music/track4.mp3" },
-            { id: 4, title: "Ships Passing", artist: "Young the Giant", file: "music/track5.mp3" },
-            { id: 5, title: "This Too Shall Pass", artist: "Young the Giant", file: "music/track6.mp3" }
-        ];
+        // ==========================================
+        // YOUR DATABASE
+        // ==========================================
+        const library = {
+            "nostalgia": {
+                id: "nostalgia",
+                title: "nostalgia, ULTRA.",
+                artist: "Frank Ocean",
+                cover: "music/nostalgia-ultra/album.webp",
+                themeColor: "#d9772b", // Orange fade
+                tracks: [
+                    { id: 0, title: "Strawberry Swing", file: "music/nostalgia-ultra/audio-01.mp3" },
+                    { id: 1, title: "Novacane", file: "music/nostalgia-ultra/audio-02.mp3" },
+                    { id: 2, title: "We All Try", file: "music/nostalgia-ultra/audio-03.mp3" }
+                ]
+            },
+            "victory": {
+                id: "victory",
+                title: "Victory Garden",
+                artist: "Young the Giant",
+                cover: "music/victory-garden/album.webp",
+                themeColor: "#6b2e2e", // Red fade
+                tracks: [
+                    { id: 0, title: "Evergreen", file: "music/victory-garden/audio-01.mp3" },
+                    { id: 1, title: "Different Kind Of Love", file: "music/victory-garden/audio-02.mp3" }
+                ]
+            }
+            // TO ADD A NEW ALBUM: Just copy the block above, change the ID, and update the details!
+        };
 
-        let currentTrackId = null;
+        // ==========================================
+        // APP STATE & LOGIC
+        // ==========================================
+        let currentAlbumId = null;  // Which album is currently OPEN on the screen
+        let playingAlbumId = null;  // Which album is currently PLAYING music
+        let playingTrackId = null;  // Which track is currently PLAYING
         let isPlaying = false;
-        const audioPlayer = document.getElementById('audioPlayer');
-        const mainPlayIcon = document.getElementById('mainPlayIcon');
-        const npPlayIcon = document.getElementById('npPlayIcon');
-        const tracklistContainer = document.getElementById('tracklist');
 
-        // Build the tracklist UI
+        const audioPlayer = document.getElementById('audioPlayer');
+        const viewLibrary = document.getElementById('libraryView');
+        const viewAlbum = document.getElementById('albumView');
+        
+        // 1. Render the Main Library Grid
+        function renderLibrary() {
+            const grid = document.getElementById('libraryGrid');
+            grid.innerHTML = '';
+            
+            Object.values(library).forEach(album => {
+                grid.innerHTML += `
+                    <div class="flex flex-col cursor-pointer active:scale-95 transition-transform" onclick="openAlbum('${album.id}')">
+                        <img src="${album.cover}" class="w-full aspect-square object-cover mb-2 shadow-lg rounded-md" onerror="this.src='https://placehold.co/400x400/282828/FFF?text=Art'">
+                        <span class="text-sm font-bold truncate-2-lines text-white">${album.title}</span>
+                        <span class="text-xs text-spGray truncate">${album.artist}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // 2. Navigation: Show Library, Hide Album
+        function showLibrary() {
+            viewAlbum.classList.add('hidden');
+            viewLibrary.classList.remove('hidden');
+        }
+
+        // 3. Navigation: Open Specific Album
+        function openAlbum(albumId) {
+            currentAlbumId = albumId;
+            const album = library[albumId];
+            
+            // Update Album Header UI
+            document.getElementById('headerCover').src = album.cover;
+            document.getElementById('headerAlbumTitle').innerText = album.title;
+            document.getElementById('headerArtist').innerText = album.artist;
+            
+            // Set dynamic background gradient based on themeColor
+            viewAlbum.style.background = `linear-gradient(to bottom, ${album.themeColor} 0%, #121212 40%)`;
+
+            renderTracklist();
+
+            // Switch Views
+            viewLibrary.classList.add('hidden');
+            viewAlbum.classList.remove('hidden');
+        }
+
+        // 4. Render Tracks inside an Album
         function renderTracklist() {
+            const album = library[currentAlbumId];
+            const tracklistContainer = document.getElementById('tracklist');
             tracklistContainer.innerHTML = '';
-            tracks.forEach(track => {
-                const isCurrent = track.id === currentTrackId;
+            
+            album.tracks.forEach(track => {
+                // Check if this specific track is currently playing globally
+                const isCurrent = (playingAlbumId === currentAlbumId && playingTrackId === track.id);
                 const textColor = isCurrent ? 'text-spGreen' : 'text-white';
                 
                 tracklistContainer.innerHTML += `
-                    <div class="flex justify-between items-center py-3 active:bg-spDark rounded-md px-2 -mx-2 transition-colors cursor-pointer" onclick="playTrack(${track.id})">
+                    <div class="flex justify-between items-center py-3 active:bg-spDark rounded-md px-2 -mx-2 transition-colors cursor-pointer" onclick="playTrack('${album.id}', ${track.id})">
                         <div class="flex flex-col">
                             <span class="text-base ${textColor} font-medium">${track.title}</span>
-                            <span class="text-sm text-spGray">${track.artist}</span>
+                            <span class="text-sm text-spGray">${album.artist}</span>
                         </div>
                         <button class="text-spGray text-lg"><i class="fas fa-ellipsis-v"></i></button>
                     </div>
@@ -137,31 +218,41 @@
             });
         }
 
-        // Play a specific track
-        function playTrack(id) {
-            if (currentTrackId !== id) {
-                currentTrackId = id;
-                const track = tracks[id];
+        // 5. Audio Player Logic
+        function playTrack(albumId, trackId) {
+            const album = library[albumId];
+            const track = album.tracks.find(t => t.id === trackId);
+
+            // Only change source if it's a new track
+            if (playingAlbumId !== albumId || playingTrackId !== trackId) {
+                playingAlbumId = albumId;
+                playingTrackId = trackId;
                 audioPlayer.src = track.file;
                 
-                // Update "Now Playing" Bar
+                // Update Mini Player UI
                 document.getElementById('npTitle').innerText = track.title;
-                document.getElementById('npArtist').innerText = track.artist;
-                
-                renderTracklist(); // Re-render to show green text
+                document.getElementById('npArtist').innerText = album.artist;
+                document.getElementById('npCover').src = album.cover;
             }
             
             audioPlayer.play();
             isPlaying = true;
+            
+            // Refresh tracklist if we are currently looking at the album that is playing
+            if (currentAlbumId === playingAlbumId) {
+                renderTracklist(); 
+            }
             updatePlayIcons();
         }
 
-        // Toggle Play/Pause
         function togglePlay(event) {
-            if (event) event.stopPropagation(); // Stop click from bleeding into the bar
+            if (event) event.stopPropagation(); 
             
-            if (currentTrackId === null) {
-                playTrack(0); // If nothing is playing, start the first song
+            // If nothing is playing, play track 1 of the currently opened album
+            if (playingTrackId === null) {
+                if (currentAlbumId) {
+                    playTrack(currentAlbumId, 0);
+                }
                 return;
             }
 
@@ -175,18 +266,19 @@
             updatePlayIcons();
         }
 
-        // Update the FontAwesome icons
         function updatePlayIcons() {
             const iconClass = isPlaying ? 'fa-pause' : 'fa-play';
-            mainPlayIcon.className = `fas ${iconClass}`;
-            npPlayIcon.className = `fas ${iconClass}`;
+            document.getElementById('mainPlayIcon').className = `fas ${iconClass}`;
+            document.getElementById('npPlayIcon').className = `fas ${iconClass}`;
         }
 
-        // Auto-play next track when one finishes
+        // Auto-play next track
         audioPlayer.onended = function() {
-            let nextTrack = currentTrackId + 1;
-            if (nextTrack < tracks.length) {
-                playTrack(nextTrack);
+            const album = library[playingAlbumId];
+            let nextTrackId = playingTrackId + 1;
+            
+            if (nextTrackId < album.tracks.length) {
+                playTrack(playingAlbumId, nextTrackId);
             } else {
                 isPlaying = false;
                 updatePlayIcons();
@@ -194,7 +286,7 @@
         };
 
         // Initialize App
-        renderTracklist();
+        renderLibrary();
     </script>
 </body>
 </html>
