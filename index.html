@@ -6,9 +6,15 @@
     
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
     
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <script>
+        (function() {
+            const currentUrl = new URL(window.location.href);
+            if (!currentUrl.searchParams.has('v')) {
+                currentUrl.searchParams.set('v', new Date().getTime());
+                window.location.replace(currentUrl.toString());
+            }
+        })();
+    </script>
     
     <title>Spotify Clone</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,23 +32,26 @@
         ::-webkit-scrollbar { width: 0px; background: transparent; }
         .truncate-2-lines { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
-        /* Detects iPhone/Android home bars and adds perfect padding */
-        .safe-bottom { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); }
+        /* The Dynamic Viewport Fix for Mobile Browsers */
+        body { height: 100dvh; } 
         
-        /* Scrubber Bar Styling */
+        /* Hardware Safe Area Padding */
+        .safe-bottom { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
+        
+        /* Smooth Scrubber */
         input[type=range] { -webkit-appearance: none; background: #4d4d4d; border-radius: 5px; height: 4px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; cursor: pointer; transition: transform 0.1s; }
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.3); }
         
-        /* Full Player Slide Animation */
-        .slide-up { transform: translateY(100%); transition: transform 0.3s ease-out; }
+        .slide-up { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .slide-up.active { transform: translateY(0); }
     </style>
 </head>
-<body class="bg-black text-white font-sans h-screen w-full flex justify-center overflow-hidden">
+<body class="bg-black text-white font-sans w-full flex justify-center overflow-hidden">
 
     <div class="w-full max-w-md h-full bg-spBlack relative flex flex-col">
         
-        <div id="libraryView" class="flex-1 overflow-y-auto pb-40 w-full">
+        <div id="libraryView" class="flex-1 overflow-y-auto pb-48 w-full">
             <div class="px-4 py-6 sticky top-0 bg-spBlack z-10 flex justify-between items-center shadow-md">
                 <div class="flex items-center space-x-4">
                     <div class="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center text-sm font-bold">B</div>
@@ -63,7 +72,7 @@
         </div>
 
 
-        <div id="albumView" class="hidden flex-1 overflow-y-auto pb-40 w-full transition-all duration-300" style="background: linear-gradient(to bottom, #121212 0%, #121212 40%);">
+        <div id="albumView" class="hidden flex-1 overflow-y-auto pb-48 w-full transition-all duration-300" style="background: linear-gradient(to bottom, #121212 0%, #121212 40%);">
             
             <div class="flex justify-between items-center px-4 py-4 sticky top-0 z-10">
                 <button onclick="showLibrary()" class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
@@ -113,7 +122,7 @@
                 <img id="fullCover" src="" class="w-full aspect-square rounded-lg shadow-2xl object-cover">
             </div>
 
-            <div class="px-6 pb-10 safe-bottom">
+            <div class="px-6 pb-12 safe-bottom">
                 <div class="flex justify-between items-end mb-6">
                     <div class="flex-1 overflow-hidden pr-4">
                         <h2 id="fullTitle" class="text-2xl font-bold truncate text-white mb-1">Song Title</h2>
@@ -123,7 +132,7 @@
                 </div>
 
                 <div class="mb-6 flex flex-col">
-                    <input type="range" id="scrubber" class="w-full" value="0" step="1" oninput="seekAudio()">
+                    <input type="range" id="scrubber" class="w-full" value="0" step="0.1">
                     <div class="flex justify-between text-xs text-spGray mt-2 font-mono">
                         <span id="timeCurrent">0:00</span>
                         <span id="timeTotal">0:00</span>
@@ -160,7 +169,7 @@
                 </div>
             </div>
             
-            <div class="flex justify-around items-center pt-2 px-2 bg-spBlack text-spGray text-xs safe-bottom">
+            <div class="flex justify-around items-center pt-2 px-2 bg-spBlack text-spGray text-xs safe-bottom shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
                 <button onclick="showLibrary()" class="flex flex-col items-center hover:text-white transition-colors"><i class="fas fa-home text-xl mb-1"></i>Home</button>
                 <button class="flex flex-col items-center hover:text-white transition-colors"><i class="fas fa-search text-xl mb-1"></i>Search</button>
                 <button onclick="showLibrary()" class="flex flex-col items-center text-white"><i class="fas fa-book-open text-xl mb-1"></i>Library</button>
@@ -201,7 +210,6 @@
                     { id: 0, title: "The Art of Loving (Intro)", file: "music/the-art-of-loving/the-art-of-loving-(intro).mp3" },
                     { id: 1, title: "Lady Lady", file: "music/the-art-of-loving/lady-lady.mp3" },
                     { id: 2, title: "Nice To Each Other", file: "music/the-art-of-loving/nice-to-each-other.mp3" }
-                    // Add the other 9 songs here!
                 ]
             }
         };
@@ -213,6 +221,7 @@
         let playingAlbumId = null;  
         let playingTrackId = null;  
         let isPlaying = false;
+        let isDraggingScrubber = false; // Fixes the bouncing scrubber bug
 
         const audioPlayer = document.getElementById('audioPlayer');
         const viewLibrary = document.getElementById('libraryView');
@@ -220,7 +229,6 @@
         const viewFullPlayer = document.getElementById('fullPlayerView');
         const scrubber = document.getElementById('scrubber');
         
-        // 1. Render Library
         function renderLibrary() {
             const grid = document.getElementById('libraryGrid');
             grid.innerHTML = '';
@@ -236,7 +244,6 @@
             });
         }
 
-        // 2. Navigation
         function showLibrary() {
             viewAlbum.classList.add('hidden');
             viewLibrary.classList.remove('hidden');
@@ -258,7 +265,6 @@
             viewAlbum.classList.remove('hidden');
         }
 
-        // Full Player Animations
         function openFullPlayer() {
             if (playingTrackId !== null) {
                 viewFullPlayer.classList.add('active');
@@ -268,7 +274,6 @@
             viewFullPlayer.classList.remove('active');
         }
 
-        // 3. Render Tracklist
         function renderTracklist() {
             if(!currentAlbumId) return;
             const album = library[currentAlbumId];
@@ -291,7 +296,6 @@
             });
         }
 
-        // 4. Playback Engine
         function playTrack(albumId, trackId) {
             const album = library[albumId];
             const track = album.tracks.find(t => t.id === trackId);
@@ -301,12 +305,10 @@
                 playingTrackId = trackId;
                 audioPlayer.src = track.file;
                 
-                // Update Mini Player
                 document.getElementById('npTitle').innerText = track.title;
                 document.getElementById('npArtist').innerText = album.artist;
                 document.getElementById('npCover').src = album.cover;
 
-                // Update Full Player
                 document.getElementById('fullTitle').innerText = track.title;
                 document.getElementById('fullArtist').innerText = album.artist;
                 document.getElementById('fullCover').src = album.cover;
@@ -314,7 +316,7 @@
                 viewFullPlayer.style.background = `linear-gradient(to bottom, ${album.themeColor} 0%, #121212 100%)`;
             }
             
-            audioPlayer.play();
+            audioPlayer.play().catch(e => console.log("Audio play failed: Check file names exactly!", e));
             isPlaying = true;
             renderTracklist(); 
             updatePlayIcons();
@@ -335,13 +337,12 @@
             if(!playingAlbumId) return;
             const album = library[playingAlbumId];
             let nextId = playingTrackId + 1;
-            if(nextId >= album.tracks.length) nextId = 0; // Loop back to start
+            if(nextId >= album.tracks.length) nextId = 0; 
             playTrack(playingAlbumId, nextId);
         }
 
         function prevTrack() {
             if(!playingAlbumId) return;
-            // If we are more than 3 seconds in, just restart the song
             if(audioPlayer.currentTime > 3) {
                 audioPlayer.currentTime = 0;
                 return;
@@ -359,7 +360,6 @@
             document.getElementById('fullPlayIcon').className = `fas ${iconClass}`;
         }
 
-        // 5. Time & Scrubber Management
         function formatTime(seconds) {
             if(isNaN(seconds)) return "0:00";
             const m = Math.floor(seconds / 60);
@@ -367,28 +367,38 @@
             return `${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
+        // --- THE SCRUBBER BOUNCE FIX ---
+        // Tells the app when your thumb is touching the screen
+        scrubber.addEventListener('mousedown', () => isDraggingScrubber = true);
+        scrubber.addEventListener('touchstart', () => isDraggingScrubber = true);
+        
+        // Updates the music to match where you let go
+        scrubber.addEventListener('mouseup', () => { 
+            audioPlayer.currentTime = scrubber.value; 
+            isDraggingScrubber = false; 
+        });
+        scrubber.addEventListener('touchend', () => { 
+            audioPlayer.currentTime = scrubber.value; 
+            isDraggingScrubber = false; 
+        });
+
         audioPlayer.addEventListener('loadedmetadata', () => {
             scrubber.max = audioPlayer.duration;
             document.getElementById('timeTotal').innerText = formatTime(audioPlayer.duration);
         });
 
         audioPlayer.addEventListener('timeupdate', () => {
-            if(!scrubber.active) scrubber.value = audioPlayer.currentTime; // Don't fight the user if dragging
+            // Only update the scrubber visual if you ARE NOT currently dragging it
+            if(!isDraggingScrubber) {
+                scrubber.value = audioPlayer.currentTime;
+                const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                scrubber.style.background = `linear-gradient(to right, #1ed760 ${progress}%, #4d4d4d ${progress}%)`;
+            }
             document.getElementById('timeCurrent').innerText = formatTime(audioPlayer.currentTime);
-            
-            // Dynamic green line effect on scrubber
-            const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-            scrubber.style.background = `linear-gradient(to right, #1ed760 ${progress}%, #4d4d4d ${progress}%)`;
         });
 
-        function seekAudio() {
-            audioPlayer.currentTime = scrubber.value;
-        }
-
-        // Auto-play next track
         audioPlayer.onended = function() { nextTrack(); };
 
-        // Initialize App
         renderLibrary();
     </script>
 </body>
