@@ -120,11 +120,17 @@
                 title: "nostalgia, ULTRA.",
                 artist: "Frank Ocean",
                 cover: "music/nostalgia-ultra/album.webp",
-                themeColor: "#d9772b", // Orange fade
+                themeColor: "#d9772b", 
                 tracks: [
                     { id: 0, title: "Strawberry Swing", file: "music/nostalgia-ultra/audio-01.mp3" },
                     { id: 1, title: "Novacane", file: "music/nostalgia-ultra/audio-02.mp3" },
-                    { id: 2, title: "We All Try", file: "music/nostalgia-ultra/audio-03.mp3" }
+                    { id: 2, title: "We All Try", file: "music/nostalgia-ultra/audio-03.mp3" },
+                    { id: 3, title: "Songs for Women", file: "music/nostalgia-ultra/audio-04.mp3" },
+                    { id: 4, title: "LoveCrimes", file: "music/nostalgia-ultra/audio-05.mp3" },
+                    { id: 5, title: "There Will Be Tears", file: "music/nostalgia-ultra/audio-06.mp3" },
+                    { id: 6, title: "Swim Good", file: "music/nostalgia-ultra/audio-07.mp3" },
+                    { id: 7, title: "American Wedding", file: "music/nostalgia-ultra/audio-08.mp3" },
+                    { id: 8, title: "Nature Feels", file: "music/nostalgia-ultra/audio-09.mp3" }
                 ]
             },
             "victory": {
@@ -132,21 +138,32 @@
                 title: "Victory Garden",
                 artist: "Young the Giant",
                 cover: "music/victory-garden/album.webp",
-                themeColor: "#6b2e2e", // Red fade
+                themeColor: "#6b2e2e", 
                 tracks: [
                     { id: 0, title: "Evergreen", file: "music/victory-garden/audio-01.mp3" },
                     { id: 1, title: "Different Kind Of Love", file: "music/victory-garden/audio-02.mp3" }
                 ]
+            },
+            "art-of-loving": {
+                id: "art-of-loving",
+                title: "The Art of Loving",
+                artist: "Masego",
+                cover: "music/the-art-of-loving/album.webp",
+                themeColor: "#4a5568", 
+                tracks: [
+                    { id: 0, title: "The Art of Loving (Intro)", file: "music/the-art-of-loving/the-art-of-loving-(intro).mp3" },
+                    { id: 1, title: "Lady Lady", file: "music/the-art-of-loving/lady-lady.mp3" },
+                    { id: 2, title: "Nice To Each Other", file: "music/the-art-of-loving/nice-to-each-other.mp3" }
+                ]
             }
-            // TO ADD A NEW ALBUM: Just copy the block above, change the ID, and update the details!
         };
 
         // ==========================================
         // APP STATE & LOGIC
         // ==========================================
-        let currentAlbumId = null;  // Which album is currently OPEN on the screen
-        let playingAlbumId = null;  // Which album is currently PLAYING music
-        let playingTrackId = null;  // Which track is currently PLAYING
+        let currentAlbumId = null;  
+        let playingAlbumId = null;  
+        let playingTrackId = null;  
         let isPlaying = false;
 
         const audioPlayer = document.getElementById('audioPlayer');
@@ -202,7 +219,6 @@
             tracklistContainer.innerHTML = '';
             
             album.tracks.forEach(track => {
-                // Check if this specific track is currently playing globally
                 const isCurrent = (playingAlbumId === currentAlbumId && playingTrackId === track.id);
                 const textColor = isCurrent ? 'text-spGreen' : 'text-white';
                 
@@ -248,7 +264,6 @@
         function togglePlay(event) {
             if (event) event.stopPropagation(); 
             
-            // If nothing is playing, play track 1 of the currently opened album
             if (playingTrackId === null) {
                 if (currentAlbumId) {
                     playTrack(currentAlbumId, 0);
