@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spotify Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        spBlack: '#121212',
+                        spGreen: '#1ed760',
+                        spGray: '#b3b3b3',
+                        spDark: '#282828'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Creates the fade-in color gradient at the top of the album */
+        .album-gradient {
+            background: linear-gradient(to bottom, #6b2e2e 0%, #121212 40%);
+        }
+        /* Custom scrollbar to mimic native app */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body class="bg-black text-white font-sans h-screen w-full flex justify-center overflow-hidden">
+
+    <div class="w-full max-w-md h-full bg-spBlack relative flex flex-col album-gradient">
+        
+        <div class="flex justify-between items-center px-4 py-4 sticky top-0 z-10">
+            <button class="text-white text-xl"><i class="fas fa-arrow-left"></i></button>
+            <span class="text-sm font-bold opacity-0 transition-opacity" id="headerTitle">Victory Garden</span>
+            <button class="text-white text-xl"><i class="fas fa-ellipsis-v"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pb-24 px-4" id="scrollArea">
+            
+            <div class="flex flex-col items-center mt-4 mb-6">
+                <img src="images/cover.jpg" alt="Album Cover" class="w-60 h-60 shadow-2xl mb-4 rounded-sm object-cover" onerror="this.src='https://placehold.co/400x400/282828/FFF?text=Album+Art'">
+                <div class="w-full text-left">
+                    <h1 class="text-2xl font-bold mb-1">Victory Garden</h1>
+                    <div class="flex items-center text-sm mb-1">
+                        <img src="images/artist.jpg" alt="Artist" class="w-6 h-6 rounded-full mr-2 object-cover" onerror="this.src='https://placehold.co/100x100/282828/FFF?text=Artist'">
+                        <span class="font-bold">Young the Giant</span>
+                    </div>
+                    <p class="text-spGray text-xs">Album • 2024 • Latest release</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex space-x-4 text-spGray text-xl">
+                    <button><i class="far fa-heart"></i></button>
+                    <button><i class="fas fa-arrow-circle-down"></i></button>
+                    <button><i class="fas fa-ellipsis-h"></i></button>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-spGray text-2xl"><i class="fas fa-random"></i></button>
+                    <button onclick="togglePlay()" class="w-14 h-14 bg-spGreen rounded-full flex items-center justify-center text-black text-xl hover:scale-105 transition-transform">
+                        <i class="fas fa-play" id="mainPlayIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col" id="tracklist">
+                </div>
+        </div>
+
+        <div class="absolute bottom-0 w-full px-2 pb-2 z-20">
+            <div class="bg-spDark rounded-md flex items-center p-2 shadow-lg cursor-pointer hover:bg-gray-700 transition-colors">
+                <img src="images/cover.jpg" alt="Now Playing" class="w-10 h-10 rounded-sm mr-3 object-cover" id="npCover" onerror="this.src='https://placehold.co/100x100/121212/FFF?text=Art'">
+                <div class="flex-1 overflow-hidden">
+                    <div class="text-sm font-bold truncate" id="npTitle">Select a track</div>
+                    <div class="text-xs text-spGray truncate" id="npArtist">Young the Giant</div>
+                </div>
+                <div class="flex items-center space-x-4 px-2 text-xl">
+                    <button class="text-spGreen"><i class="fas fa-laptop-house text-sm"></i></button>
+                    <button class="text-spGreen"><i class="far fa-check-circle"></i></button>
+                    <button onclick="togglePlay(event)" class="text-white w-8 h-8 flex items-center justify-center">
+                        <i class="fas fa-play" id="npPlayIcon"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center pt-3 px-6 pb-2 bg-spBlack text-spGray text-xs">
+                <div class="flex flex-col items-center text-white"><i class="fas fa-home text-xl mb-1"></i>Home</div>
+                <div class="flex flex-col items-center"><i class="fas fa-search text-xl mb-1"></i>Search</div>
+                <div class="flex flex-col items-center"><i class="fas fa-book-open text-xl mb-1"></i>Your Library</div>
+                <div class="flex flex-col items-center"><i class="fab fa-spotify text-xl mb-1"></i>Premium</div>
+            </div>
+        </div>
+
+    </div>
+
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        // --- YOUR TRACK DATA HERE ---
+        // Just upload your mp3 files to the "music" folder in GitHub and list them here!
+        const tracks = [
+            { id: 0, title: "Evergreen", artist: "Young the Giant", file: "music/track1.mp3" },
+            { id: 1, title: "Different Kind Of Love", artist: "Young the Giant", file: "music/track2.mp3" },
+            { id: 2, title: "Bitter Fruit", artist: "Young the Giant", file: "music/track3.mp3" },
+            { id: 3, title: "Already There", artist: "Young the Giant", file: "music/track4.mp3" },
+            { id: 4, title: "Ships Passing", artist: "Young the Giant", file: "music/track5.mp3" },
+            { id: 5, title: "This Too Shall Pass", artist: "Young the Giant", file: "music/track6.mp3" }
+        ];
+
+        let currentTrackId = null;
+        let isPlaying = false;
+        const audioPlayer = document.getElementById('audioPlayer');
+        const mainPlayIcon = document.getElementById('mainPlayIcon');
+        const npPlayIcon = document.getElementById('npPlayIcon');
+        const tracklistContainer = document.getElementById('tracklist');
+
+        // Build the tracklist UI
+        function renderTracklist() {
+            tracklistContainer.innerHTML = '';
+            tracks.forEach(track => {
+                const isCurrent = track.id === currentTrackId;
+                const textColor = isCurrent ? 'text-spGreen' : 'text-white';
+                
+                tracklistContainer.innerHTML += `
+                    <div class="flex justify-between items-center py-3 active:bg-spDark rounded-md px-2 -mx-2 transition-colors cursor-pointer" onclick="playTrack(${track.id})">
+                        <div class="flex flex-col">
+                            <span class="text-base ${textColor} font-medium">${track.title}</span>
+                            <span class="text-sm text-spGray">${track.artist}</span>
+                        </div>
+                        <button class="text-spGray text-lg"><i class="fas fa-ellipsis-v"></i></button>
+                    </div>
+                `;
+            });
+        }
+
+        // Play a specific track
+        function playTrack(id) {
+            if (currentTrackId !== id) {
+                currentTrackId = id;
+                const track = tracks[id];
+                audioPlayer.src = track.file;
+                
+                // Update "Now Playing" Bar
+                document.getElementById('npTitle').innerText = track.title;
+                document.getElementById('npArtist').innerText = track.artist;
+                
+                renderTracklist(); // Re-render to show green text
+            }
+            
+            audioPlayer.play();
+            isPlaying = true;
+            updatePlayIcons();
+        }
+
+        // Toggle Play/Pause
+        function togglePlay(event) {
+            if (event) event.stopPropagation(); // Stop click from bleeding into the bar
+            
+            if (currentTrackId === null) {
+                playTrack(0); // If nothing is playing, start the first song
+                return;
+            }
+
+            if (isPlaying) {
+                audioPlayer.pause();
+                isPlaying = false;
+            } else {
+                audioPlayer.play();
+                isPlaying = true;
+            }
+            updatePlayIcons();
+        }
+
+        // Update the FontAwesome icons
+        function updatePlayIcons() {
+            const iconClass = isPlaying ? 'fa-pause' : 'fa-play';
+            mainPlayIcon.className = `fas ${iconClass}`;
+            npPlayIcon.className = `fas ${iconClass}`;
+        }
+
+        // Auto-play next track when one finishes
+        audioPlayer.onended = function() {
+            let nextTrack = currentTrackId + 1;
+            if (nextTrack < tracks.length) {
+                playTrack(nextTrack);
+            } else {
+                isPlaying = false;
+                updatePlayIcons();
+            }
+        };
+
+        // Initialize App
+        renderTracklist();
+    </script>
+</body>
+</html>
