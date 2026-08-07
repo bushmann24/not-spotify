@@ -203,6 +203,17 @@
                     { id: 12, title: "Soul Calibur", file: "music/nostalgia-ultra/audio-13.mp3" },
                     { id: 13, title: "Nature Feels", file: "music/nostalgia-ultra/audio-14.mp3" }
                 ]
+            },
+            "lonny-breaux": {
+                id: "lonny-breaux",
+                title: "The Lonny Breaux Collection",
+                artist: "Frank Ocean",
+                meta: "Mixtape • 2008 • Offline",
+                cover: "music/lonny-breaux-collection/album.webp",
+                themeColor: "#2d3748", 
+                tracks: [
+                    { id: 0, title: "Ready", file: "music/lonny-breaux-collection/ready.mp3" }
+                ]
             }
         };
 
@@ -303,16 +314,13 @@
             if (!playingAlbumId) return;
             const album = library[playingAlbumId];
 
-            // 1. Get all tracks EXCEPT the one we are starting with
             let remainingTracks = album.tracks.map(t => t.id).filter(id => id !== startTrackId);
 
-            // 2. Shuffle those remaining tracks like a deck of cards
             for (let i = remainingTracks.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [remainingTracks[i], remainingTracks[j]] = [remainingTracks[j], remainingTracks[i]];
             }
 
-            // 3. Rebuild the queue: The requested song plays first, then the randomized rest follow
             shuffleQueue = [startTrackId, ...remainingTracks];
             shuffleIndex = 0;
         }
@@ -328,7 +336,6 @@
                 btnAlbum.classList.remove('text-spGray'); btnAlbum.classList.add('text-spGreen');
                 btnFull.classList.remove('text-spGray'); btnFull.classList.add('text-spGreen');
                 
-                // Build the new randomized deck right now
                 if (playingAlbumId && playingTrackId !== null) {
                     buildShuffleQueue(playingTrackId);
                 }
@@ -344,10 +351,9 @@
             const album = library[albumId];
             const track = album.tracks.find(t => t.id === trackId);
 
-            // SHUFFLE FIX: If you manually click a song while shuffle is on, it rebuilds the deck!
             if (isShuffle) {
                 if (playingAlbumId !== albumId || shuffleQueue[shuffleIndex] !== trackId) {
-                    playingAlbumId = albumId; // Must set this before building queue
+                    playingAlbumId = albumId; 
                     buildShuffleQueue(trackId);
                 }
             }
@@ -396,10 +402,8 @@
             if (isShuffle) {
                 shuffleIndex++;
                 if (shuffleIndex < shuffleQueue.length) {
-                    // Draw the next card in the deck
                     playTrack(playingAlbumId, shuffleQueue[shuffleIndex]);
                 } else {
-                    // Deck is empty, album stops playing
                     isPlaying = false;
                     audioPlayer.pause();
                     updatePlayIcons();
@@ -410,7 +414,6 @@
                 if(nextId < album.tracks.length) {
                     playTrack(playingAlbumId, nextId);
                 } else {
-                    // Normal order is finished, album stops playing
                     isPlaying = false;
                     audioPlayer.pause();
                     updatePlayIcons();
@@ -420,7 +423,6 @@
 
         function prevTrack() {
             if(!playingAlbumId) return;
-            // If we are deep into the song, just restart it natively
             if(audioPlayer.currentTime > 3) {
                 audioPlayer.currentTime = 0;
                 return;
@@ -477,7 +479,6 @@
             document.getElementById('timeCurrent').innerText = formatTime(audioPlayer.currentTime);
         });
 
-        // Automatically fire the next song when one ends
         audioPlayer.onended = function() { nextTrack(); };
 
         // INITIAL BOOT
